@@ -1,7 +1,8 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Bell, BriefcaseBusiness, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, FilePenLine, FileText, LayoutDashboard, Mail, Plus, Search, Send, Settings, Sparkles, Users, X, Zap } from "lucide-react";
+import { Bell, BriefcaseBusiness, CalendarDays, ChevronDown, CircleHelp, Clock3, FilePenLine, FileText, LayoutDashboard, Mail, Plus, Search, Send, Settings, Sparkles, Users, Zap } from "lucide-react";
 import { matters } from "@/lib/types";
+import PleadingGenerator from "@/app/components/pleading-generator";
 
 const nav = [ [LayoutDashboard,"Dashboard"], [BriefcaseBusiness,"Matters"], [Users,"Contacts"], [FileText,"Documents"], [CalendarDays,"Calendar"], [Clock3,"Time & Billing"] ] as const;
 const activities = [
@@ -12,9 +13,8 @@ const activities = [
 ];
 
 export default function Dashboard() {
- const [active,setActive]=useState("Dashboard"); const [query,setQuery]=useState(""); const [generator,setGenerator]=useState(false); const [selected,setSelected]=useState(matters[0].id); const [pleadingType,setPleadingType]=useState("Notice of Appearance"); const [deliveryMethod,setDeliveryMethod]=useState("email"); const [toast,setToast]=useState(false); const [error,setError]=useState("");
+ const [active,setActive]=useState("Dashboard"); const [query,setQuery]=useState(""); const [generator,setGenerator]=useState(false);
  const filtered=useMemo(()=>matters.filter(m=>(m.client+m.caseName+m.caseNumber).toLowerCase().includes(query.toLowerCase())),[query]);
- const generate=async()=>{ setError(""); const response=await fetch("/api/documents",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({matterId:selected,pleadingType,recipient:"opposing-counsel",deliveryMethod})}); if(!response.ok){setError("We couldn’t create the draft. Check your connection and try again.");return;} setGenerator(false); setToast(true); setTimeout(()=>setToast(false),3500); };
  return <div className="shell">
   <aside className="sidebar"><div className="brand"><div className="brandmark">L</div><div><b>LexFlow</b><span>LEGAL AUTOMATION</span></div></div><button className="newmatter"><Plus size={17}/> New matter</button><nav>{nav.map(([Icon,label])=><button key={label} className={active===label?"active":""} onClick={()=>setActive(label)}><Icon size={19}/>{label}{label==="Documents"&&<em>12</em>}</button>)}</nav><div className="sidebottom"><button><CircleHelp size={19}/>Help & support</button><button><Settings size={19}/>Settings</button><div className="profile"><div className="avatar">AV</div><div><b>Alexandra Vance</b><span>Vance Legal Group</span></div><ChevronDown size={15}/></div></div></aside>
   <main><header><div className="search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search matters, contacts, or documents..."/><kbd>⌘ K</kbd></div><button className="iconbtn"><Bell size={19}/><i/></button></header>
@@ -24,7 +24,6 @@ export default function Dashboard() {
     <section className="panel activity"><div className="panelhead"><div><h2>Recent activity</h2><p>Latest updates across your firm</p></div><button>View all <span>→</span></button></div>{activities.map(({icon:Icon,title,meta,time,tone})=><div className="activityrow" key={title}><i className={tone}><Icon size={17}/></i><div><b>{title}</b><span>{meta}</span></div><time>{time}</time></div>)}</section>
    </div><section className="automation"><div className="spark"><Sparkles/></div><div><span>LEXFLOW AUTOMATION</span><h2>Create court-ready documents in minutes</h2><p>Pull verified matter and contact data into your firm’s approved templates, then deliver by email or fax.</p></div><div className="flow"><div><FileText/><span><b>1. Select matter</b><small>Use CRM data</small></span></div><i>→</i><div><FilePenLine/><span><b>2. Choose pleading</b><small>Apply preset rules</small></span></div><i>→</i><div><Send/><span><b>3. Review & send</b><small>Email or fax</small></span></div></div><button onClick={()=>setGenerator(true)}>Get started <span>→</span></button></section>
   </div></main>
-  {generator&&<div className="overlay" onMouseDown={()=>setGenerator(false)}><div className="modal" onMouseDown={e=>e.stopPropagation()}><button className="close" aria-label="Close generator" onClick={()=>setGenerator(false)}><X/></button><div className="modalicon"><Sparkles/></div><p className="eyebrow">DOCUMENT AUTOMATION</p><h2>Generate a new pleading</h2><p>We’ll populate the document using verified matter and contact data.</p><label>Matter<select value={selected} onChange={e=>setSelected(e.target.value)}>{matters.map(m=><option value={m.id} key={m.id}>{m.caseName} · {m.caseNumber}</option>)}</select></label><div className="two"><label>Pleading type<select value={pleadingType} onChange={e=>setPleadingType(e.target.value)}><option>Notice of Appearance</option><option>Motion for Continuance</option><option>Certificate of Service</option><option>Demand Letter</option></select></label><label>Delivery<select value={deliveryMethod} onChange={e=>setDeliveryMethod(e.target.value)}><option value="email">Email</option><option value="fax">Fax</option><option value="both">Email and fax</option></select></label></div><div className="rule"><Check size={17}/><span><b>Preset rules enabled</b><small>Court caption, parties, case number, signature, and service list will be ordered automatically.</small></span></div>{error&&<p className="formerror" role="alert">{error}</p>}<button className="generate" onClick={generate}><Sparkles size={17}/> Build document preview</button></div></div>}
-  {toast&&<div className="toast"><Check/> Draft generated from CRM data. Ready for review.</div>}
+  {generator&&<PleadingGenerator onClose={()=>setGenerator(false)}/>}
  </div>
 }
